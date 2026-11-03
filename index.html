@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klo oder No-Go? – 12 Karten</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:16px;min-height:100vh;background:#f1f4fa;color:#172033;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center}
+main{width:100%;max-width:780px;background:white;border-radius:24px;padding:clamp(16px,4vw,32px);box-shadow:0 8px 32px #0001}
+header,.stats,.actions{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1{font-size:clamp(25px,5vw,36px);margin:0}.tag{background:#e8efff;color:#2853a6;border-radius:30px;padding:8px 12px;font-weight:bold;white-space:nowrap}
+.stats{margin:22px 0 8px;color:#64708a;font-weight:bold;font-size:14px}.track{height:9px;background:#e9edf5;border-radius:20px;overflow:hidden}.bar{height:100%;background:#20a36b;width:0;transition:width .2s}
+.card{margin-top:20px;border:2px solid #e8ecf4;border-radius:22px;padding:clamp(18px,5vw,36px);min-height:350px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center}
+.prompt{font-size:13px;letter-spacing:1px;font-weight:bold;color:#78839a}.emoji{font-size:clamp(76px,18vw,112px);line-height:1.2}.item{font-size:clamp(30px,7vw,46px);margin:0}.hint{color:#78839a;margin:0}
+.actions{width:100%;margin-top:10px}.actions button{width:50%;color:white}
+button{border:0;border-radius:15px;padding:16px 20px;min-height:58px;font-size:18px;font-weight:bold;cursor:pointer;touch-action:manipulation;-webkit-appearance:none}
+.no{background:#df4654;color:white}.yes{background:#159b68;color:white}.next,.again{background:#2859bd;color:white;width:100%;margin-top:8px}
+.feedback{width:100%;background:#eef5ff;border:1px solid #d9e6fb;border-radius:16px;padding:17px;text-align:left;line-height:1.55}
+.feedback strong{display:block;font-size:18px;margin-bottom:8px}.feedback .fact-title{font-weight:bold;color:#2853a6;margin-bottom:5px}
+.end{display:none;text-align:center;padding:34px 8px}.score{font-size:56px;font-weight:900;color:#159b68}
+small{display:block;text-align:center;color:#8791a5;margin-top:14px}
+@media(max-width:420px){header{align-items:flex-start}.tag{font-size:12px}.actions button{padding:12px 6px;font-size:16px}}
+</style>
+</head>
+<body>
+<main>
+<header><h1>🚽 Klo oder No-Go?</h1><span class="tag">12 Karten · Klasse 3</span></header>
+<section id="game">
+<div class="stats"><span id="progress">KARTE 1 VON 12</span><span id="points">0 Punkte</span></div>
+<div class="track"><div class="bar" id="bar"></div></div>
+<div class="card">
+<div class="prompt">GEHÖRT DAS INS KLO?</div>
+<div class="emoji" id="emoji">🧻</div>
+<h2 class="item" id="item">Toilettenpapier</h2>
+<p class="hint">Entscheide: JA oder NEIN?</p>
+<div class="actions" id="actions">
+<button class="no" id="noButton" type="button" onclick="answer(false)">✕ NEIN</button>
+<button class="yes" id="yesButton" type="button" onclick="answer(true)">✓ JA</button>
+</div>
+<div class="feedback" id="feedback" style="display:none"></div>
+<button class="next" id="nextButton" type="button" style="display:none" onclick="nextCard()">Nächste Karte →</button>
+</div>
+<small>Lies den Sachtext nach jeder Antwort gemeinsam.</small>
+</section>
+<section class="end" id="end">
+<div style="font-size:64px">🏆</div><h2>Geschafft!</h2>
+<div class="score" id="finalScore">0 / 12</div>
+<h3 id="message"></h3><p>Du hast alle Karten gespielt.</p>
+<button class="again" type="button" onclick="restart()">↻ Nochmal spielen</button>
+</section>
+</main>
+<script>
+var cards=[
+["Toilettenpapier","🧻",true,"Toilettenpapier darf in die Toilette. Es ist dafür gemacht, sich im Wasser schnell in kleine Stücke aufzulösen. So kann es mit dem Abwasser weiterfließen."],
+["Pipi","💧",true,"Urin darf in die Toilette. Er wird mit dem Spülwasser durch die Abwasserrohre zur Kläranlage transportiert. Dort wird das Abwasser gereinigt."],
+["Kacka","💩",true,"Kot gehört in die Toilette. Beim Spülen wird er zusammen mit dem Wasser durch die Kanalisation zur Kläranlage gebracht und dort aus dem Abwasser entfernt."],
+["Feuchttücher","🧼",false,"Feuchttücher gehören nicht in die Toilette. Sie zerfallen im Wasser nur sehr langsam. Sie können sich mit anderen Tüchern verbinden und Rohre oder Pumpen verstopfen."],
+["Taschentuch","🤧",false,"Taschentücher gehören in den Restmüll. Anders als Toilettenpapier lösen sie sich im Wasser nicht schnell genug auf. Sie können deshalb in den Rohren hängen bleiben."],
+["Küchenpapier","🧻",false,"Küchenpapier gehört in den Restmüll. Es ist besonders saugfähig und bleibt im Wasser lange fest. Dadurch kann es Rohre und Pumpen verstopfen."],
+["Windel","👶",false,"Eine Windel darf nicht in die Toilette. Sie saugt viel Wasser auf, wird dadurch größer und kann das Abflussrohr verstopfen. Windeln gehören in den Restmüll."],
+["Wattestäbchen","🦻",false,"Wattestäbchen gehören in den Restmüll. Sie lösen sich nicht im Wasser auf und können sich in Rohren oder Pumpen festsetzen."],
+["Bananenschale","🍌",false,"Eine Bananenschale gehört in den Biomüll, nicht in die Toilette. Sie zersetzt sich nur langsam und kann zusammen mit anderen Abfällen die Abwasserrohre belasten."],
+["Spielzeugauto","🚗",false,"Ein Spielzeugauto gehört natürlich nicht in die Toilette. Es löst sich nicht im Wasser auf und kann das Rohr verstopfen. Spielzeug gehört zurück in die Spielzeugkiste."],
+["Haare","💇",false,"Haare gehören nicht in die Toilette. Sie lösen sich im Wasser nicht auf und können sich zu Knäueln verbinden. Diese bleiben leicht in Rohren hängen."],
+["Essensreste","🍝",false,"Essensreste gehören nicht in die Toilette. Sie können Rohre verstopfen und locken außerdem Ratten in die Kanalisation. Kleine Küchenreste gehören – je nach Abfallart – in den Bio- oder Restmüll."]
+];
+var deck=[],position=0,points=0,answered=false;
+function byId(id){return document.getElementById(id)}
+function shuffle(list){var a=list.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function showCard(){
+ var c=cards[deck[position]];
+ byId("progress").textContent="KARTE "+(position+1)+" VON 12";
+ byId("points").textContent=points+" Punkte";
+ byId("bar").style.width=((position+1)/12*100)+"%";
+ byId("emoji").textContent=c[1];byId("item").textContent=c[0];
+ byId("actions").style.display="flex";byId("feedback").style.display="none";byId("nextButton").style.display="none";
+ byId("nextButton").textContent=position===11?"Ergebnis anzeigen":"Nächste Karte →";
+ var order=shuffle(["noButton","yesButton"]);
+ byId("actions").appendChild(byId(order[0]));byId("actions").appendChild(byId(order[1]));
+ answered=false;
+}
+function answer(choice){
+ if(answered)return;
+ answered=true;
+ var c=cards[deck[position]],correct=(choice===c[2]);
+ if(correct)points++;
+ byId("points").textContent=points+" Punkte";
+ byId("actions").style.display="none";
+ byId("feedback").innerHTML="<strong>"+(correct?"✅ Richtig!":"❌ Leider nicht ganz.")+"</strong><div class='fact-title'>Sachtext: Warum?</div>"+c[3];
+ byId("feedback").style.display="block";byId("nextButton").style.display="block";
+}
+function nextCard(){
+ if(position<11){position++;showCard();return;}
+ byId("game").style.display="none";byId("end").style.display="block";
+ byId("finalScore").textContent=points+" / 12";
+ byId("message").textContent=points>=10?"Du bist ein Klo-Profi!":points>=7?"Sehr gut gemacht!":"Weiter üben – du wirst zum Klo-Profi!";
+}
+function restart(){deck=shuffle(cards.map(function(c,i){return i;}));position=0;points=0;byId("end").style.display="none";byId("game").style.display="block";showCard();}
+restart();
+</script>
+</body>
+</html>
